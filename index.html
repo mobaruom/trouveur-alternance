@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trouveur d'Alternance - Marseille</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #fbbf24;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 { color: var(--primary); margin-bottom: 10px; }
+
+        /* Formulaire */
+        .search-box {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        input, select, button {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            font-size: 1rem;
+        }
+
+        button {
+            background: var(--primary);
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover { background: var(--primary-hover); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Stats & Filtres */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .filter-controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-chip {
+            background: transparent;
+            border: 1px solid var(--text-muted);
+            color: var(--text-muted);
+            padding: 5px 15px;
+            margin: 0 5px;
+            font-size: 0.85rem;
+        }
+
+        /* Cartes Jobs */
+        .job-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 5px solid #334155;
+            transition: 0.3s;
+        }
+
+        .job-card:hover { transform: scale(1.01); border-left-color: var(--primary); }
+
+        .job-title { margin: 0 0 10px 0; display: flex; align-items: center; justify-content: space-between; }
+
+        .tag {
+            background: #334155;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            margin-right: 5px;
+        }
+
+        .relevance-star {
+            background: var(--accent);
+            color: black;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .job-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* Loading */
+        #loadingSection { text-align: center; display: none; margin: 40px; }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @media (max-width: 600px) {
+            .search-box { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🚀 Alternance Marseille Search</h1>
+        <p>Trouve ton contrat BTS en un clic</p>
+    </header>
+
+    <div class="search-box">
+        <input type="text" id="domain" placeholder="Ex: RH, Assistant, Informatique..." value="Ressources Humaines">
+        <input type="text" id="location" placeholder="Ville" value="Marseille">
+        <select id="contractType">
+            <option value="alternance">Alternance</option>
+            <option value="apprentissage">Apprentissage</option>
+            <option value="professionnalisation">Professionnalisation</option>
+        </select>
+        <button id="searchBtn" onclick="searchJobs()" style="grid-column: span 3;">Lancer la recherche réelle</button>
+    </div>
+
+    <div id="statsSection" style="display: none;">
+        <div class="stats-grid">
+            <div class="stat-card"><small>Trouvées</small><div id="totalJobs" style="font-size: 1.5rem; font-weight: bold;">0</div></div>
+            <div class="stat-card"><small>Temps</small><div id="searchTime" style="font-size: 1.5rem; font-weight: bold;">0s</div></div>
+            <div class="stat-card">
+                <button onclick="exportResults()" style="padding: 5px 10px; font-size: 0.8rem; background: var(--success);">📥 Export CSV</button>
+            </div>
+        </div>
+
+        <div class="filter-controls">
+            <button class="filter-chip" onclick="sortJobs('alpha')">Trier par Entreprise</button>
+            <button class="filter-chip" onclick="sortJobs('recent')">Plus récents</button>
+        </div>
+    </div>
+
+    <div id="loadingSection">
+        <div class="spinner"></div>
+        <p>Recherche en cours sur le Web...</p>
+    </div>
+
+    <div id="resultsSection">
+        <div id="jobsList"></div>
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="loadMoreBtn" onclick="loadMoreJobs()" style="display: none; background: #334155;">Afficher plus de résultats</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allJobs = [];
+    let currentPage = 1;
+    let currentQuery = "";
+    let startTime;
+    const apiKey = 'd581f9b764mshd57f53ab3977d23p19412bjsn6cf674dd01e7';
+
+    // Mots-clés pour la pertinence
+    const keywords = ['bts', 'assistant', 'alternance', 'rh', 'apprentissage'];
+
+    async function searchJobs() {
+        const domain = document.getElementById('domain').value;
+        const location = document.getElementById('location').value;
+        const contract = document.getElementById('contractType').value;
+        
+        if(!domain) return alert("Précise un métier !");
+
+        startTime = Date.now();
+        currentPage = 1;
+        allJobs = [];
+        currentQuery = `${domain} ${contract} ${location}`;
+        
+        document.getElementById('jobsList').innerHTML = '';
+        document.getElementById('statsSection').style.display = 'none';
+        
+        await fetchJobs();
+    }
+
+    async function loadMoreJobs() {
+        currentPage++;
+        await fetchJobs(true);
+    }
+
+    async function fetchJobs(isAppending = false) {
+        document.getElementById('loadingSection').style.display = 'block';
+        document.getElementById('searchBtn').disabled = true;
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        loadMoreBtn.style.display = 'none';
+
+        const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(currentQuery)}&page=${currentPage}&num_pages=1`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'x-rapidapi-key': apiKey,
+                    'x-rapidapi-host': 'jsearch.p.rapidapi.com'
+                }
+            });
+            const result = await response.json();
+
+            if (result.data && result.data.length > 0) {
+                const newJobs = result.data.map(job => {
+                    const j = {
+                        title: job.job_title,
+                        company: job.employer_name,
+                        location: job.job_city || location.value,
+                        description: job.job_description ? job.job_description.substring(0, 200) + "..." : "",
+                        url: job.job_apply_link,
+                        score: 0
+                    };
+                    // Calcul du score de pertinence
+                    keywords.forEach(k => { if(j.title.toLowerCase().includes(k)) j.score++; });
+                    return j;
+                });
+
+                allJobs = allJobs.concat(newJobs);
+                renderJobs(newJobs, isAppending);
+                loadMoreBtn.style.display = 'inline-block';
+            } else if (!isAppending) {
+                document.getElementById('jobsList').innerHTML = "<p style='text-align:center'>Aucun résultat trouvé.</p>";
+            }
+        } catch (e) {
+            alert("Erreur API. Vérifie ton quota ou ta clé.");
+        } finally {
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('searchBtn').disabled = false;
+            document.getElementById('statsSection').style.display = 'block';
+            document.getElementById('totalJobs').textContent = allJobs.length;
+            document.getElementById('searchTime').textContent = ((Date.now() - startTime)/1000).toFixed(1) + 's';
+        }
+    }
+
+    function renderJobs(jobs, isAppending) {
+        const list = document.getElementById('jobsList');
+        
+        jobs.forEach((job, i) => {
+            const card = document.createElement('div');
+            card.className = 'job-card';
+            card.innerHTML = `
+                <div class="job-title">
+                    <strong>${job.title}</strong>
+                    ${job.score > 1 ? '<span class="relevance-star">🌟 TOP MATCH</span>' : ''}
+                </div>
+                <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px;">
+                    🏢 ${job.company} | 📍 ${job.location}
+                </div>
+                <p style="font-size: 0.85rem;">${job.description}</p>
+                <a href="${job.url}" target="_blank" class="job-link">Postuler →</a>
+            `;
+            list.appendChild(card);
+        });
+    }
+
+    function sortJobs(type) {
+        if(type === 'alpha') allJobs.sort((a,b) => a.company.localeCompare(b.company));
+        else allJobs.reverse();
+        document.getElementById('jobsList').innerHTML = '';
+        renderJobs(allJobs, false);
+    }
+
+    function exportResults() {
+        if (allJobs.length === 0) return;
+        let csv = "\uFEFFEntreprise,Poste,Ville,Lien\n";
+        allJobs.forEach(j => {
+            csv += `"${j.company}","${j.title}","${j.location}","${j.url}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = "mes_recherches.csv";
+        link.click();
+    }
+</script>
+
+</body>
+</html>
