@@ -1,56 +1,80 @@
-async function fetchFromAdzuna() {
-    const domainInput = document.getElementById('domain').value;
-    const locationInput = document.getElementById('location').value;
-    const loading = document.getElementById('loading');
-    const loadMoreBtn = document.getElementById('loadMore');
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Trouveur d'Alternance</title>
+    <style>
+        /* Garde ton CSS ici */
+        body { font-family: sans-serif; background: #0f172a; color: white; padding: 20px; }
+        .job-card { background: #1e293b; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #6366f1; }
+        .search-box { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; }
+        input, button { padding: 10px; border-radius: 5px; border: none; }
+        button { background: #6366f1; color: white; cursor: pointer; font-weight: bold; }
+        .job-link { color: #10b981; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
 
-    loading.style.display = 'block';
-    loadMoreBtn.style.display = 'none';
+    <div style="max-width: 800px; margin: 0 auto;">
+        <h1 style="text-align: center;">🚀 Alternance Search</h1>
+        
+        <div class="search-box">
+            <input type="text" id="domain" placeholder="Métier" value="Ressources Humaines" style="flex: 2;">
+            <input type="text" id="location" placeholder="Ville" value="Marseille" style="flex: 1;">
+            <button onclick="searchJobs()">Lancer la recherche</button>
+        </div>
 
-    // On simplifie la recherche pour Adzuna (on enlève les termes trop restrictifs)
-    const query = encodeURIComponent(domainInput);
-    const place = encodeURIComponent(locationInput);
+        <div id="stats" style="margin-bottom: 10px; color: #94a3b8;">Offres trouvées : <span id="totalJobs">0</span></div>
+        <div id="loading" style="display:none; text-align: center;">⌛ Recherche en cours...</div>
+        <div id="results"></div>
+    </div>
 
-    // URL vers Adzuna France
-    const url = `https://api.adzuna.com/v1/api/jobs/fr/search/${currentPage}?app_id=${APP_ID}&app_key=${APP_KEY}&results_per_page=15&what=${query}&where=${place}&content-type=application/json`;
+    <script>
+        let allJobs = [];
+        const APP_ID = '48757112';
+        const APP_KEY = 'a203ff7d66ab6e9f492f053751d9b188';
 
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
+        async function searchJobs() {
+            const domain = document.getElementById('domain').value;
+            const location = document.getElementById('location').value;
+            const resultsDiv = document.getElementById('results');
+            const loading = document.getElementById('loading');
+            
+            resultsDiv.innerHTML = '';
+            loading.style.display = 'block';
+            allJobs = [];
 
-        if (data.results && data.results.length > 0) {
-            data.results.forEach(job => {
-                // On vérifie si c'est une alternance dans la description pour mettre une étoile
-                const isAlternance = job.description.toLowerCase().includes('alternance') || 
-                                     job.title.toLowerCase().includes('alternance');
-                
-                const div = document.createElement('div');
-                div.className = 'job-card';
-                div.innerHTML = `
-                    <h3>${job.title} ${isAlternance ? '🌟' : ''}</h3>
-                    <p><strong>🏢 ${job.company.display_name}</strong> | 📍 ${job.location.display_name}</p>
-                    <p style="font-size:0.9rem">${job.description.substring(0, 150)}...</p>
-                    <a href="${job.redirect_url}" target="_blank" class="job-link">Voir l'offre →</a>
-                `;
-                document.getElementById('results').appendChild(div);
-                allJobs.push(job);
-            });
-            loadMoreBtn.style.display = 'inline-block';
-        } else {
-            if(currentPage === 1) {
-                document.getElementById('results').innerHTML = `
-                    <p style="text-align:center; color:var(--text-muted)">
-                        😕 Aucun résultat précis pour "${domainInput}".<br>
-                        Essaie avec un mot plus simple comme "Vente" ou "Comptabilité".
-                    </p>`;
+            // On ajoute "alternance" à la requête pour filtrer les résultats
+            const url = `https://api.adzuna.com/v1/api/jobs/fr/search/1?app_id=${APP_ID}&app_key=${APP_KEY}&results_per_page=15&what=${encodeURIComponent(domain + " alternance")}&where=${encodeURIComponent(location)}&content-type=application/json`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach(job => {
+                        allJobs.push(job);
+                        const card = document.createElement('div');
+                        card.className = 'job-card';
+                        card.innerHTML = `
+                            <h3 style="margin-top:0">${job.title}</h3>
+                            <p><strong>🏢 ${job.company.display_name}</strong> | 📍 ${job.location.display_name}</p>
+                            <p style="font-size:0.9rem; color:#cbd5e1">${job.description.substring(0, 150)}...</p>
+                            <a href="${job.redirect_url}" target="_blank" class="job-link">Voir l'offre →</a>
+                        `;
+                        resultsDiv.appendChild(card);
+                    });
+                } else {
+                    resultsDiv.innerHTML = "<p>Désolé, aucune offre trouvée. Essaie un mot-clé plus simple.</p>";
+                }
+            } catch (error) {
+                alert("Erreur de connexion à l'API.");
+                console.error(error);
+            } finally {
+                loading.style.display = 'none';
+                document.getElementById('totalJobs').textContent = allJobs.length;
             }
         }
-    } catch (error) {
-        alert("Erreur : Vérifie que ton ID et ta Clé Adzuna sont bien collés sans espaces !");
-        console.error(error);
-    } finally {
-        loading.style.display = 'none';
-        // Mise à jour des stats
-        document.getElementById('totalJobs').textContent = allJobs.length;
-    }
-}
+    </script>
+</body>
+</html>
