@@ -1,151 +1,56 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trouveur d'Alternance - Marseille (Adzuna)</title>
-    <style>
-        :root {
-            --primary: #6366f1;
-            --bg-dark: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --success: #10b981;
-        }
+async function fetchFromAdzuna() {
+    const domainInput = document.getElementById('domain').value;
+    const locationInput = document.getElementById('location').value;
+    const loading = document.getElementById('loading');
+    const loadMoreBtn = document.getElementById('loadMore');
 
-        body {
-            font-family: sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-        }
+    loading.style.display = 'block';
+    loadMoreBtn.style.display = 'none';
 
-        .container { max-width: 800px; margin: 0 auto; }
-        
-        .search-box {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+    // On simplifie la recherche pour Adzuna (on enlève les termes trop restrictifs)
+    const query = encodeURIComponent(domainInput);
+    const place = encodeURIComponent(locationInput);
 
-        input, select, button {
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: white;
-        }
+    // URL vers Adzuna France
+    const url = `https://api.adzuna.com/v1/api/jobs/fr/search/${currentPage}?app_id=${APP_ID}&app_key=${APP_KEY}&results_per_page=15&what=${query}&where=${place}&content-type=application/json`;
 
-        button {
-            background: var(--primary);
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-        }
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
 
-        .job-card {
-            background: var(--card-bg);
-            padding: 20px;
-            margin-bottom: 15px;
-            border-radius: 10px;
-            border-left: 4px solid var(--primary);
-        }
-
-        .job-link {
-            color: var(--success);
-            text-decoration: none;
-            font-weight: bold;
-            display: inline-block;
-            margin-top: 10px;
-        }
-
-        #loading { display: none; text-align: center; margin: 20px; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1 style="text-align: center; color: var(--primary);">🚀 Alternance Search</h1>
-    
-    <div class="search-box">
-        <input type="text" id="domain" placeholder="Métier (ex: RH, Vente)" value="Ressources Humaines">
-        <input type="text" id="location" placeholder="Ville" value="Marseille">
-        <button onclick="searchJobs()">Lancer la recherche</button>
-    </div>
-
-    <div id="loading">Recherche en cours sur Adzuna...</div>
-    <div id="results"></div>
-    <div style="text-align:center">
-        <button id="loadMore" style="display:none; margin-top:20px;" onclick="loadMore()">Charger plus</button>
-    </div>
-</div>
-
-<script>
-    let currentPage = 1;
-    let allJobs = [];
-    // TES IDENTIFIANTS ADZUNA
-    const APP_ID = '48757112';
-    const APP_KEY = 'a203ff7d66ab6e9f492f053751d9b188';
-
-    async function searchJobs() {
-        currentPage = 1;
-        allJobs = [];
-        document.getElementById('results').innerHTML = '';
-        await fetchFromAdzuna();
-    }
-
-    async function loadMore() {
-        currentPage++;
-        await fetchFromAdzuna();
-    }
-
-    async function fetchFromAdzuna() {
-        const domain = document.getElementById('domain').value;
-        const location = document.getElementById('location').value;
-        const loading = document.getElementById('loading');
-        const loadMoreBtn = document.getElementById('loadMore');
-
-        loading.style.display = 'block';
-        loadMoreBtn.style.display = 'none';
-
-        // URL Adzuna France
-        const url = `https://api.adzuna.com/v1/api/jobs/fr/search/${currentPage}?app_id=${APP_ID}&app_key=${APP_KEY}&results_per_page=10&what=${encodeURIComponent(domain + " alternance")}&where=${encodeURIComponent(location)}`;
-
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
-
-            if (data.results && data.results.length > 0) {
-                data.results.forEach(job => {
-                    allJobs.push(job);
-                    const div = document.createElement('div');
-                    div.className = 'job-card';
-                    div.innerHTML = `
-                        <h3>${job.title}</h3>
-                        <p><strong>🏢 ${job.company.display_name}</strong> | 📍 ${job.location.display_name}</p>
-                        <p style="font-size:0.9rem">${job.description.substring(0, 150)}...</p>
-                        <a href="${job.redirect_url}" target="_blank" class="job-link">Voir l'offre →</a>
-                    `;
-                    document.getElementById('results').appendChild(div);
-                });
-                loadMoreBtn.style.display = 'inline-block';
-            } else {
-                if(currentPage === 1) document.getElementById('results').innerHTML = "Aucun résultat trouvé.";
+        if (data.results && data.results.length > 0) {
+            data.results.forEach(job => {
+                // On vérifie si c'est une alternance dans la description pour mettre une étoile
+                const isAlternance = job.description.toLowerCase().includes('alternance') || 
+                                     job.title.toLowerCase().includes('alternance');
+                
+                const div = document.createElement('div');
+                div.className = 'job-card';
+                div.innerHTML = `
+                    <h3>${job.title} ${isAlternance ? '🌟' : ''}</h3>
+                    <p><strong>🏢 ${job.company.display_name}</strong> | 📍 ${job.location.display_name}</p>
+                    <p style="font-size:0.9rem">${job.description.substring(0, 150)}...</p>
+                    <a href="${job.redirect_url}" target="_blank" class="job-link">Voir l'offre →</a>
+                `;
+                document.getElementById('results').appendChild(div);
+                allJobs.push(job);
+            });
+            loadMoreBtn.style.display = 'inline-block';
+        } else {
+            if(currentPage === 1) {
+                document.getElementById('results').innerHTML = `
+                    <p style="text-align:center; color:var(--text-muted)">
+                        😕 Aucun résultat précis pour "${domainInput}".<br>
+                        Essaie avec un mot plus simple comme "Vente" ou "Comptabilité".
+                    </p>`;
             }
-        } catch (error) {
-            alert("Erreur lors de la recherche. Vérifie tes identifiants Adzuna.");
-            console.error(error);
-        } finally {
-            loading.style.display = 'none';
         }
+    } catch (error) {
+        alert("Erreur : Vérifie que ton ID et ta Clé Adzuna sont bien collés sans espaces !");
+        console.error(error);
+    } finally {
+        loading.style.display = 'none';
+        // Mise à jour des stats
+        document.getElementById('totalJobs').textContent = allJobs.length;
     }
-</script>
-
-</body>
-</html>
+}
