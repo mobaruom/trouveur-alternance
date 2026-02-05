@@ -1,80 +1,69 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Trouveur d'Alternance</title>
-    <style>
-        /* Garde ton CSS ici */
-        body { font-family: sans-serif; background: #0f172a; color: white; padding: 20px; }
-        .job-card { background: #1e293b; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #6366f1; }
-        .search-box { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 10px; }
-        input, button { padding: 10px; border-radius: 5px; border: none; }
-        button { background: #6366f1; color: white; cursor: pointer; font-weight: bold; }
-        .job-link { color: #10b981; text-decoration: none; font-weight: bold; }
-    </style>
-</head>
-<body>
+// Remplace ta fonction searchJobs par celle-ci
+async function searchJobs() {
+    const domain = document.getElementById('domain').value;
+    const location = document.getElementById('location').value;
+    const resultsDiv = document.getElementById('results');
+    
+    if(!domain) return alert("Indique un métier !");
 
-    <div style="max-width: 800px; margin: 0 auto;">
-        <h1 style="text-align: center;">🚀 Alternance Search</h1>
+    resultsDiv.innerHTML = '';
+    document.getElementById('loading').style.display = 'block';
+    allJobs = [];
+
+    try {
+        // On lance Adzuna et Jooble en même temps
+        await Promise.all([
+            fetchFromAdzuna(domain, location),
+            fetchFromJooble(domain, location)
+        ]);
         
-        <div class="search-box">
-            <input type="text" id="domain" placeholder="Métier" value="Ressources Humaines" style="flex: 2;">
-            <input type="text" id="location" placeholder="Ville" value="Marseille" style="flex: 1;">
-            <button onclick="searchJobs()">Lancer la recherche</button>
-        </div>
+        // On ajoute un bouton spécial à la fin pour ne jamais être bloqué
+        addExternalSearchLinks(domain, location);
 
-        <div id="stats" style="margin-bottom: 10px; color: #94a3b8;">Offres trouvées : <span id="totalJobs">0</span></div>
-        <div id="loading" style="display:none; text-align: center;">⌛ Recherche en cours...</div>
-        <div id="results"></div>
-    </div>
+    } catch (error) {
+        console.error("Erreur", error);
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('totalJobs').textContent = allJobs.length;
+    }
+}
 
-    <script>
-        let allJobs = [];
-        const APP_ID = '48757112';
-        const APP_KEY = 'a203ff7d66ab6e9f492f053751d9b188';
+async function fetchFromJooble(domain, location) {
+    const JOOBLE_KEY = "736f2b62-efb8-4e3c-860f-a38762dff771";
+    const url = `https://fr.jooble.org/api/${JOOBLE_KEY}`;
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keywords: domain + " alternance", location: location })
+        });
+        const data = await response.json();
 
-        async function searchJobs() {
-            const domain = document.getElementById('domain').value;
-            const location = document.getElementById('location').value;
-            const resultsDiv = document.getElementById('results');
-            const loading = document.getElementById('loading');
-            
-            resultsDiv.innerHTML = '';
-            loading.style.display = 'block';
-            allJobs = [];
-
-            // On ajoute "alternance" à la requête pour filtrer les résultats
-            const url = `https://api.adzuna.com/v1/api/jobs/fr/search/1?app_id=${APP_ID}&app_key=${APP_KEY}&results_per_page=15&what=${encodeURIComponent(domain + " alternance")}&where=${encodeURIComponent(location)}&content-type=application/json`;
-
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data.results && data.results.length > 0) {
-                    data.results.forEach(job => {
-                        allJobs.push(job);
-                        const card = document.createElement('div');
-                        card.className = 'job-card';
-                        card.innerHTML = `
-                            <h3 style="margin-top:0">${job.title}</h3>
-                            <p><strong>🏢 ${job.company.display_name}</strong> | 📍 ${job.location.display_name}</p>
-                            <p style="font-size:0.9rem; color:#cbd5e1">${job.description.substring(0, 150)}...</p>
-                            <a href="${job.redirect_url}" target="_blank" class="job-link">Voir l'offre →</a>
-                        `;
-                        resultsDiv.appendChild(card);
-                    });
-                } else {
-                    resultsDiv.innerHTML = "<p>Désolé, aucune offre trouvée. Essaie un mot-clé plus simple.</p>";
-                }
-            } catch (error) {
-                alert("Erreur de connexion à l'API.");
-                console.error(error);
-            } finally {
-                loading.style.display = 'none';
-                document.getElementById('totalJobs').textContent = allJobs.length;
-            }
+        if (data.jobs) {
+            data.jobs.forEach(job => {
+                const card = createJobCard(job.title, job.company, job.location, job.snippet, job.link, "JOOBLE");
+                document.getElementById('results').appendChild(card);
+                allJobs.push(job);
+            });
         }
-    </script>
-</body>
-</html>
+    } catch (e) { console.log("Erreur Jooble (Quota peut-être atteint)"); }
+}
+
+function addExternalSearchLinks(domain, location) {
+    const resultsDiv = document.getElementById('results');
+    const query = encodeURIComponent(domain + " alternance " + location);
+    
+    const banner = document.createElement('div');
+    banner.style.cssText = "background: #334155; padding: 20px; border-radius: 12px; margin-top: 30px; text-align: center; border: 2px dashed #6366f1;";
+    banner.innerHTML = `
+        <h4 style="margin-top:0">🚀 Pas assez de résultats ?</h4>
+        <p style="font-size:0.9rem">Continue ta recherche sur les plateformes partenaires :</p>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <a href="https://www.google.com/search?q=${query}&ibp=htl;jobs" target="_blank" style="background:#4285F4; color:white; padding:8px 15px; border-radius:5px; text-decoration:none; font-weight:bold;">Google Jobs</a>
+            <a href="https://fr.indeed.com/jobs?q=${query}" target="_blank" style="background:#2557a7; color:white; padding:8px 15px; border-radius:5px; text-decoration:none; font-weight:bold;">Indeed</a>
+            <a href="https://www.hellowork.com/fr-fr/emploi/recherche.html?k=${encodeURIComponent(domain)}&l=${encodeURIComponent(location)}&c=Alternance" target="_blank" style="background:#ff585f; color:white; padding:8px 15px; border-radius:5px; text-decoration:none; font-weight:bold;">HelloWork</a>
+        </div>
+    `;
+    resultsDiv.appendChild(banner);
+}
