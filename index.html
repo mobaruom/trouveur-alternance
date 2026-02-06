@@ -3,241 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MOMOJOB NEXUS CORE</title>
+    <title>MJob | By Momo</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        /* --- ARCHITECTURE CSS : DESIGN SYSTEM --- */
         :root {
-            --p: #7c3aed; --p-soft: rgba(124, 58, 237, 0.1);
-            --bg: #0b0f1a; --surface: #161b2c; --border: #2d3548;
-            --text: #ffffff; --text-dim: #94a3b8;
-            --safe-area-bottom: env(safe-area-inset-bottom);
+            --p: #8b5cf6; 
+            --bg: #0f172a; 
+            --surface: #1e293b; 
+            --border: #334155;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-            background: var(--bg); color: var(--text); line-height: 1.5;
-            overflow-x: hidden;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; }
 
-        /* --- LAYOUT RESPONSIVE --- */
-        .app-container { max-width: 1000px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
-        
         header {
-            padding: 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;
+            background: var(--surface);
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
         }
 
-        .brand { font-size: 1.5rem; font-weight: 900; letter-spacing: -1px; display: flex; align-items: center; gap: 8px; }
+        .brand { font-size: 1.8rem; font-weight: 900; letter-spacing: -1.5px; }
         .brand span { color: var(--p); }
+        .by-momo { font-family: 'Dancing Script', cursive; color: var(--p); font-size: 1.2rem; margin-left: 10px; }
 
-        /* --- ENGINE DE RECHERCHE DYNAMIQUE --- */
-        .hero { padding: 2rem 1.5rem; background: linear-gradient(to bottom, var(--surface), var(--bg)); }
+        .search-container { padding: 2rem 1rem; max-width: 800px; margin: 0 auto; }
+        .search-card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+        }
+
+        .input-group { margin-bottom: 1rem; flex: 1; }
+        .input-group label { display: block; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 5px; text-transform: uppercase; font-weight: 700; }
+        .input-wrapper { position: relative; }
+        .input-wrapper i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--p); }
         
-        .search-grid {
-            display: grid; grid-template-columns: 1fr; gap: 12px;
-            background: var(--surface); padding: 1rem; border-radius: 16px;
-            border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        input {
+            width: 100%; background: #0f172a; border: 1px solid var(--border);
+            padding: 14px 14px 14px 40px; color: white; border-radius: 10px;
+            font-size: 1rem; transition: 0.3s;
+        }
+        input:focus { border-color: var(--p); outline: none; }
+
+        .btn-search {
+            width: 100%; background: var(--p); color: white; border: none;
+            padding: 16px; border-radius: 10px; font-weight: 800;
+            cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;
         }
 
-        .field { position: relative; }
-        .field i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--p); }
-        .field input {
-            width: 100%; background: var(--bg); border: 1px solid var(--border);
-            padding: 14px 14px 14px 45px; border-radius: 12px; color: white; font-size: 1rem;
-            transition: all 0.3s;
-        }
-        .field input:focus { border-color: var(--p); box-shadow: 0 0 0 3px var(--p-soft); outline: none; }
-
-        .btn-main {
-            background: var(--p); color: white; border: none; padding: 14px;
-            border-radius: 12px; font-weight: 700; cursor: pointer; display: flex;
-            align-items: center; justify-content: center; gap: 10px; transition: 0.2s;
-        }
-        .btn-main:hover { opacity: 0.9; transform: translateY(-1px); }
-
-        /* --- FILTRES & TRIS --- */
-        .toolbar { padding: 0 1.5rem; display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; }
-        .toolbar::-webkit-scrollbar { display: none; }
-        .chip {
-            padding: 8px 16px; background: var(--surface); border: 1px solid var(--border);
-            border-radius: 20px; font-size: 0.8rem; white-space: nowrap; cursor: pointer;
-        }
-        .chip.active { background: var(--p); border-color: var(--p); }
-
-        /* --- LISTING ENGINE --- */
-        .feed { padding: 1.5rem; flex: 1; }
+        .results { padding: 1rem; max-width: 800px; margin: 0 auto; }
         .job-card {
-            background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-            padding: 1.25rem; margin-bottom: 1rem; transition: 0.3s; position: relative;
-            animation: fadeIn 0.4s ease forwards;
+            background: var(--surface); padding: 1.5rem; border-radius: 12px;
+            margin-bottom: 1rem; border: 1px solid var(--border); transition: 0.3s;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .job-card:hover { border-color: var(--p); transform: translateY(-2px); }
+        .job-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 5px; }
+        .job-company { color: var(--p); font-weight: 700; margin-bottom: 10px; display: block; }
+        .job-meta { font-size: 0.85rem; color: var(--text-dim); display: flex; gap: 15px; }
 
-        .job-card:hover { border-color: var(--p); transform: scale(1.01); }
-        .job-tag { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--p); margin-bottom: 6px; }
-        .job-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
-        .job-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; color: var(--text-dim); margin: 10px 0; }
-        .job-meta span { display: flex; align-items: center; gap: 5px; }
-
-        .btn-outline {
-            width: 100%; padding: 10px; background: transparent; border: 1px solid var(--border);
-            color: white; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px;
+        .btn-link {
+            display: inline-block; margin-top: 15px; color: white; text-decoration: none;
+            background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 0.8rem;
         }
 
-        /* --- BOTTOM NAVIGATION (MOBILE ONLY) --- */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface);
-            display: flex; justify-content: space-around; padding: 10px 10px calc(10px + var(--safe-area-bottom));
-            border-top: 1px solid var(--border); z-index: 1000;
+        /* Le fameux bouton charger plus */
+        .load-more-container { text-align: center; margin-top: 20px; display: none; }
+        .btn-more {
+            background: transparent; border: 2px solid var(--p); color: var(--p);
+            padding: 12px 30px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.3s;
         }
-        .nav-btn { background: none; border: none; color: var(--text-dim); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.7rem; cursor: pointer; }
-        .nav-btn.active { color: var(--p); }
+        .btn-more:hover { background: var(--p); color: white; }
 
-        /* --- DESKTOP ADAPTATION --- */
         @media (min-width: 768px) {
-            .search-grid { grid-template-columns: 1fr 1fr auto; padding: 1.5rem; }
-            .bottom-nav { display: none; }
-            .hero { padding: 4rem 1.5rem; }
-            .job-card { display: flex; justify-content: space-between; align-items: center; }
-            .job-content { flex: 1; }
-            .btn-outline { width: auto; padding: 10px 25px; margin-top: 0; }
+            .search-card { display: flex; gap: 15px; align-items: flex-end; }
+            .input-group { margin-bottom: 0; }
+            .btn-search { width: auto; padding: 14px 30px; }
         }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <header>
-        <div class="brand">MOMO<span>JOB</span></div>
-        <div id="status" class="chip">Nexus v1.0</div>
-    </header>
+<header>
+    <div class="brand">M<span>JOB</span></div>
+    <div class="by-momo">by Momo</div>
+</header>
 
-    <div class="hero">
-        <div class="search-grid">
-            <div class="field">
+<div class="search-container">
+    <div class="search-card">
+        <div class="input-group">
+            <label>Métier</label>
+            <div class="input-wrapper">
                 <i class="fas fa-search"></i>
-                <input type="text" id="q-what" placeholder="Métier, mots-clés...">
+                <input type="text" id="q-what" placeholder="ex: Développeur, Design...">
             </div>
-            <div class="field">
-                <i class="fas fa-location-dot"></i>
-                <input type="text" id="q-where" placeholder="Ville, département...">
+        </div>
+        <div class="input-group">
+            <label>Ville</label>
+            <div class="input-wrapper">
+                <i class="fas fa-map-marker-alt"></i>
+                <input type="text" id="q-where" placeholder="Paris, Lyon, 75...">
             </div>
-            <button class="btn-main" onclick="nexusEngine.search()">
-                <i class="fas fa-bolt"></i> SCANNER
-            </button>
         </div>
-    </div>
-
-    <div class="toolbar">
-        <div class="chip active" onclick="nexusEngine.filter('all')">Tous</div>
-        <div class="chip" onclick="nexusEngine.filter('today')">Dernières 24h</div>
-        <div class="chip" onclick="nexusEngine.filter('alternance')">Alternance</div>
-        <div class="chip" onclick="nexusEngine.filter('stage')">Stage</div>
-    </div>
-
-    <div id="feed" class="feed">
-        <div style="text-align:center; padding:3rem; color:var(--text-dim);">
-            <i class="fas fa-briefcase fa-3x" style="margin-bottom:1rem; opacity:0.2;"></i>
-            <p>Entrez un métier pour commencer le scan</p>
-        </div>
+        <button class="btn-search" onclick="initialSearch()">
+            <i class="fas fa-bolt"></i>
+        </button>
     </div>
 </div>
 
-<nav class="bottom-nav">
-    <button class="nav-btn active"><i class="fas fa-search"></i>Recherche</button>
-    <button class="nav-btn" onclick="nexusEngine.showFavorites()"><i class="fas fa-heart"></i>Favoris</button>
-    <button class="nav-btn" onclick="location.reload()"><i class="fas fa-sync"></i>Reset</button>
-</nav>
+<div id="results" class="results"></div>
+
+<div id="load-more-wrap" class="load-more-container">
+    <button class="btn-more" onclick="loadMore()">Charger plus d'offres</button>
+</div>
 
 <script>
-    /* --- CORE LOGIC ENGINE --- */
-    const nexusEngine = {
-        config: {
-            id: '48757112',
-            key: 'a203ff7d66ab6e9f492f053751d9b188',
-            results: []
-        },
+    const ID = '48757112'; 
+    const KEY = 'a203ff7d66ab6e9f492f053751d9b188';
+    let currentPage = 1;
 
-        async search() {
-            const what = document.getElementById('q-what').value || 'Alternance';
-            const where = document.getElementById('q-where').value || '';
-            const feed = document.getElementById('feed');
-            const status = document.getElementById('status');
+    async function initialSearch() {
+        currentPage = 1;
+        document.getElementById('results').innerHTML = '';
+        await executeSearch();
+    }
 
-            feed.innerHTML = '<div style="text-align:center; padding:3rem;"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:1rem;">Scan des réseaux en cours...</p></div>';
-            status.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+    async function loadMore() {
+        currentPage++;
+        await executeSearch();
+    }
 
-            try {
-                const url = `https://api.adzuna.com/v1/api/jobs/fr/search/1?app_id=${this.config.id}&app_key=${this.config.key}&results_per_page=20&what=${encodeURIComponent(what)}&where=${encodeURIComponent(where)}`;
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                this.config.results = data.results;
-                this.render(this.config.results);
-                status.innerText = `${data.count} offres`;
-            } catch (err) {
-                feed.innerHTML = '<p style="color:#ef4444; text-align:center;">Erreur de connexion aux serveurs.</p>';
-            }
-        },
+    async function executeSearch() {
+        const what = document.getElementById('q-what').value || 'Emploi';
+        const where = document.getElementById('q-where').value || '';
+        const resDiv = document.getElementById('results');
+        const moreBtn = document.getElementById('load-more-wrap');
 
-        render(items) {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = '';
+        if(currentPage === 1) resDiv.innerHTML = '<p style="text-align:center; opacity:0.5;">Scan des offres en cours...</p>';
 
-            if (items.length === 0) {
-                feed.innerHTML = '<p style="text-align:center; padding:2rem;">Aucun job trouvé.</p>';
+        try {
+            const url = `https://api.adzuna.com/v1/api/jobs/fr/search/${currentPage}?app_id=${ID}&app_key=${KEY}&results_per_page=10&what=${encodeURIComponent(what)}&where=${encodeURIComponent(where)}`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if(currentPage === 1) resDiv.innerHTML = '';
+
+            if(data.results.length === 0) {
+                if(currentPage === 1) resDiv.innerHTML = '<p style="text-align:center;">Aucune offre trouvée.</p>';
+                moreBtn.style.display = 'none';
                 return;
             }
 
-            items.forEach(job => {
+            data.results.forEach(job => {
                 const card = document.createElement('div');
                 card.className = 'job-card';
                 card.innerHTML = `
-                    <div class="job-content">
-                        <div class="job-tag">${job.company.display_name}</div>
-                        <div class="job-title">${job.title}</div>
-                        <div class="job-meta">
-                            <span><i class="fas fa-location-arrow"></i> ${job.location.display_name}</span>
-                            <span><i class="fas fa-clock"></i> ${this.formatDate(job.created)}</span>
-                            <span><i class="fas fa-euro-sign"></i> ${job.salary_min ? job.salary_min + '€' : 'N/C'}</span>
-                        </div>
+                    <span class="job-company">${job.company.display_name}</span>
+                    <div class="job-title">${job.title}</div>
+                    <div class="job-meta">
+                        <span><i class="fas fa-location-dot"></i> ${job.location.display_name}</span>
+                        <span><i class="fas fa-calendar"></i> ${new Date(job.created).toLocaleDateString()}</span>
                     </div>
-                    <button class="btn-outline" onclick="window.open('${job.redirect_url}', '_blank')">VOIR L'OFFRE</button>
+                    <a href="${job.redirect_url}" target="_blank" class="btn-link">Détails de l'offre</a>
                 `;
-                feed.appendChild(card);
+                resDiv.appendChild(card);
             });
-        },
 
-        formatDate(dateStr) {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-        },
+            // Affiche le bouton si on a des résultats
+            moreBtn.style.display = 'block';
 
-        filter(type) {
-            // Logique de filtrage local pour plus de rapidité
-            let filtered = this.config.results;
-            if (type === 'today') {
-                const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-                filtered = filtered.filter(j => new Date(j.created) > yesterday);
-            }
-            this.render(filtered);
-            
-            // UI Toggle
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-            event.target.classList.add('active');
-        },
-
-        showFavorites() {
-            alert("Favoris sauvegardés localement (Bientôt disponible)");
+        } catch (e) {
+            resDiv.innerHTML += '<p style="color:red; text-align:center;">Erreur réseau.</p>';
         }
-    };
+    }
 
-    // Auto-focus sur mobile
-    window.onload = () => {
-        document.getElementById('q-what').focus();
-    };
+    document.addEventListener('keypress', (e) => { if(e.key === 'Enter') initialSearch(); });
 </script>
 
 </body>
