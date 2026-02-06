@@ -17,7 +17,7 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; transition: background 0.5s ease; }
 
         header {
             background: var(--surface);
@@ -40,6 +40,7 @@
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border: 1px solid var(--border);
+            transition: all 0.3s ease;
         }
 
         .input-group { margin-bottom: 1rem; flex: 1; }
@@ -60,6 +61,15 @@
             cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;
         }
 
+        .time-filters {
+            display: flex; justify-content: center; gap: 10px; margin-bottom: 1.5rem;
+        }
+        .filter-btn {
+            background: var(--surface); border: 1px solid var(--border); color: var(--text-dim);
+            padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: 0.3s;
+        }
+        .filter-btn.active { background: var(--p); color: white; border-color: var(--p); }
+
         .results { padding: 1rem; max-width: 800px; margin: 0 auto; }
         .job-card {
             background: var(--surface); padding: 1.5rem; border-radius: 12px;
@@ -75,13 +85,34 @@
             background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 0.8rem;
         }
 
-        /* Le fameux bouton charger plus */
         .load-more-container { text-align: center; margin-top: 20px; display: none; }
         .btn-more {
             background: transparent; border: 2px solid var(--p); color: var(--p);
             padding: 12px 30px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.3s;
         }
-        .btn-more:hover { background: var(--p); color: white; }
+
+        /* --- STYLE EASTER EGG RGB --- */
+        @keyframes rgb-glow {
+            0% { border-color: #ff0000; box-shadow: 0 0 20px #ff0000; }
+            33% { border-color: #00ff00; box-shadow: 0 0 20px #00ff00; }
+            66% { border-color: #0000ff; box-shadow: 0 0 20px #0000ff; }
+            100% { border-color: #ff0000; box-shadow: 0 0 20px #ff0000; }
+        }
+
+        .momo-active {
+            animation: rgb-glow 1.5s infinite linear !important;
+            border-width: 3px !important;
+        }
+
+        .momo-text {
+            background: linear-gradient(to right, red, orange, yellow, green, cyan, blue, violet);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
 
         @media (min-width: 768px) {
             .search-card { display: flex; gap: 15px; align-items: flex-end; }
@@ -98,7 +129,7 @@
 </header>
 
 <div class="search-container">
-    <div class="search-card">
+    <div id="search-card-ui" class="search-card">
         <div class="input-group">
             <label>Métier</label>
             <div class="input-wrapper">
@@ -119,6 +150,12 @@
     </div>
 </div>
 
+<div id="filters-ui" class="time-filters">
+    <button class="filter-btn active" onclick="updateTimeFilter(0, this)">Toutes</button>
+    <button class="filter-btn" onclick="updateTimeFilter(2, this)">48 Heures</button>
+    <button class="filter-btn" onclick="updateTimeFilter(7, this)">7 Jours</button>
+</div>
+
 <div id="results" class="results"></div>
 
 <div id="load-more-wrap" class="load-more-container">
@@ -129,11 +166,53 @@
     const ID = '48757112'; 
     const KEY = 'a203ff7d66ab6e9f492f053751d9b188';
     let currentPage = 1;
+    let maxDays = 0;
+
+    function updateTimeFilter(days, btn) {
+        maxDays = days;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        initialSearch();
+    }
 
     async function initialSearch() {
+        const query = document.getElementById('q-what').value.toLowerCase().trim();
+        
+        // --- LOGIQUE EASTER EGG ---
+        if (query === 'quiestmomo') {
+            showMomo();
+            return;
+        }
+
+        // Retour au mode normal si on change la recherche
+        document.getElementById('search-card-ui').classList.remove('momo-active');
+        document.getElementById('filters-ui').style.display = 'flex';
+
         currentPage = 1;
         document.getElementById('results').innerHTML = '';
         await executeSearch();
+    }
+
+    function showMomo() {
+        const resDiv = document.getElementById('results');
+        const searchCard = document.getElementById('search-card-ui');
+        const filters = document.getElementById('filters-ui');
+        const moreBtn = document.getElementById('load-more-wrap');
+
+        searchCard.classList.add('momo-active');
+        filters.style.display = 'none';
+        moreBtn.style.display = 'none';
+        
+        resDiv.innerHTML = `
+            <div class="job-card" style="text-align:center; padding: 3rem;">
+                <div class="momo-text">MOMO LE BOSS</div>
+                <p style="font-size: 1.2rem; line-height: 1.6;">
+                    C'est le génie qui a codé ce site ! <br>
+                    Propulsé par le talent pur et beaucoup de café. ☕⚡
+                </p>
+                <button class="btn-search" style="margin: 20px auto 0;" onclick="location.reload()">Retourner à la réalité</button>
+            </div>
+        `;
     }
 
     async function loadMore() {
@@ -150,7 +229,9 @@
         if(currentPage === 1) resDiv.innerHTML = '<p style="text-align:center; opacity:0.5;">Scan des offres en cours...</p>';
 
         try {
-            const url = `https://api.adzuna.com/v1/api/jobs/fr/search/${currentPage}?app_id=${ID}&app_key=${KEY}&results_per_page=10&what=${encodeURIComponent(what)}&where=${encodeURIComponent(where)}`;
+            let url = `https://api.adzuna.com/v1/api/jobs/fr/search/${currentPage}?app_id=${ID}&app_key=${KEY}&results_per_page=10&what=${encodeURIComponent(what)}&where=${encodeURIComponent(where)}`;
+            if(maxDays > 0) url += `&max_days_old=${maxDays}`;
+
             const response = await fetch(url);
             const data = await response.json();
 
@@ -176,10 +257,7 @@
                 `;
                 resDiv.appendChild(card);
             });
-
-            // Affiche le bouton si on a des résultats
             moreBtn.style.display = 'block';
-
         } catch (e) {
             resDiv.innerHTML += '<p style="color:red; text-align:center;">Erreur réseau.</p>';
         }
